@@ -1,0 +1,18 @@
+applications:
+  - path: .
+    name: hzmon
+    instances: 27
+    buildpacks:
+      - binary_buildpack
+    #health-check-invocation-timeout: 6
+    #timeout: 42
+    memory: 16M
+    log-rate-limit-per-second: 25K
+    command: ./hzmon
+    env:
+      DEBUG: true
+      INTERVAL_SECS: 42
+      PUSH_INTERVAL_SECS: 60
+      PUSHGATEWAY_URL: http://10.253.21.43:9091
+    services:
+      - test-cache

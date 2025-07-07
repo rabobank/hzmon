@@ -17,11 +17,14 @@ func startHttpServer() {
 }
 
 func handleRequest(writer http.ResponseWriter, request *http.Request) {
-	parm1 := request.URL.Query()["parm1"]
-	_, _ = writer.Write([]byte(fmt.Sprintf("parm1: %s\n", parm1)))
 	stop := request.URL.Query()["stop"]
 	if len(stop) > 0 {
 		fmt.Printf("Stop server requested by %s\n", request.RemoteAddr)
 		conf.StopRequested = true
+	}
+	start := request.URL.Query()["start"]
+	if len(start) > 0 {
+		fmt.Printf("start server requested by %s\n", request.RemoteAddr)
+		conf.StopRequested = false
 	}
 }

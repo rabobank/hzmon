@@ -15,21 +15,26 @@ var (
 )
 
 const (
-	IntervalSecsDefault = 60
-	HzMapNameDefault    = "it4it-org.panzer-space.test-cache.test-cache"
+	IntervalSecsDefault            = 60
+	PushGatewayIntervalSecsDefault = 60
+	HzMapNameDefault               = "it4it-org.panzer-space.test-cache.test-cache"
 )
 
 var (
-	intervalSecsStr    = os.Getenv("INTERVAL_SECS")
-	IntervalSecs       int
-	debugStr           = os.Getenv("DEBUG")
-	Debug              bool
-	MyIP               string
-	StopRequested      bool
-	HzConfigFromVCAP   model.UserProvided
-	HzMapName          = os.Getenv("HZ_MAP_NAME")
-	cfInstanceIndexStr = os.Getenv("CF_INSTANCE_INDEX")
-	CFInstanceIndex    int
+	intervalSecsStr            = os.Getenv("INTERVAL_SECS")
+	IntervalSecs               int
+	pushGatewayIntervalSecsStr = os.Getenv("PUSH_INTERVAL_SECS")
+	PushGatewayIntervalSecs    int
+	debugStr                   = os.Getenv("DEBUG")
+	Debug                      bool
+	MyIP                       string
+	StopRequested              bool
+	HzConfigFromVCAP           model.UserProvided
+	HzMapName                  = os.Getenv("HZ_MAP_NAME")
+	cfInstanceIndexStr         = os.Getenv("CF_INSTANCE_INDEX")
+	CFInstanceIndex            int
+	HzGetTime                  int64 // time in microseconds it took to get the hz-map entry
+	PushGatewayURL             = os.Getenv("PUSHGATEWAY_URL")
 )
 
 func EnvironmentComplete() bool {
@@ -45,6 +50,17 @@ func EnvironmentComplete() bool {
 		}
 	}
 
+	if pushGatewayIntervalSecsStr == "" {
+		PushGatewayIntervalSecs = PushGatewayIntervalSecsDefault
+	} else {
+		var err error
+		PushGatewayIntervalSecs, err = strconv.Atoi(pushGatewayIntervalSecsStr)
+		if err != nil {
+			log.Printf("failed to parse PUSH_INTERVAL_SECS: %s", err)
+			envComplete = false
+		}
+	}
+
 	if cfInstanceIndexStr == "" {
 		CFInstanceIndex = 0
 	} else {
@@ -54,6 +70,10 @@ func EnvironmentComplete() bool {
 			log.Printf("failed to parse CF_INSTANCE_INDEX: %s", err)
 			envComplete = false
 		}
+	}
+
+	if PushGatewayURL == "" {
+		fmt.Println("missing envvar : PUSHGATEWAY_URL, not sending metrics to pushgateway")
 	}
 
 	if HzMapName == "" {
