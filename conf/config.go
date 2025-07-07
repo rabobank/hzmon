@@ -20,14 +20,16 @@ const (
 )
 
 var (
-	intervalSecsStr  = os.Getenv("INTERVAL_SECS")
-	IntervalSecs     int
-	debugStr         = os.Getenv("DEBUG")
-	Debug            bool
-	MyIP             string
-	StopRequested    bool
-	HzConfigFromVCAP model.UserProvided
-	HzMapName        = os.Getenv("HZ_MAP_NAME")
+	intervalSecsStr    = os.Getenv("INTERVAL_SECS")
+	IntervalSecs       int
+	debugStr           = os.Getenv("DEBUG")
+	Debug              bool
+	MyIP               string
+	StopRequested      bool
+	HzConfigFromVCAP   model.UserProvided
+	HzMapName          = os.Getenv("HZ_MAP_NAME")
+	cfInstanceIndexStr = os.Getenv("CF_INSTANCE_INDEX")
+	CFInstanceIndex    int
 )
 
 func EnvironmentComplete() bool {
@@ -41,8 +43,19 @@ func EnvironmentComplete() bool {
 			log.Printf("failed to parse INTERVAL_SECS: %s", err)
 			envComplete = false
 		}
-
 	}
+
+	if cfInstanceIndexStr == "" {
+		CFInstanceIndex = 0
+	} else {
+		var err error
+		CFInstanceIndex, err = strconv.Atoi(cfInstanceIndexStr)
+		if err != nil {
+			log.Printf("failed to parse CF_INSTANCE_INDEX: %s", err)
+			envComplete = false
+		}
+	}
+
 	if HzMapName == "" {
 		HzMapName = HzMapNameDefault
 	}

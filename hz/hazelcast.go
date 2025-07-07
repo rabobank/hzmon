@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var numMapEntries = 100
+
 func StartProbing() {
 	hzConfig := getHZConfig()
 	hzContext := context.TODO()
@@ -20,27 +22,32 @@ func StartProbing() {
 		fmt.Printf("failed to start Hazelcast client: %s\n", err)
 		os.Exit(8)
 	} else {
+		// initial wait time so that with many instances the activity will be spread out
+		waitTime := float64(conf.IntervalSecs) / (1 + float64(conf.CFInstanceIndex))
+		fmt.Printf("waiting %.0f seconds\n", waitTime)
+		time.Sleep(time.Duration(waitTime) * time.Second)
+
 		for {
 			startTime := time.Now()
 			if getMap, err := client.GetMap(hzContext, conf.HzMapName); err != nil {
 				fmt.Printf("failed to get map %s: %s\n", conf.HzMapName, err)
 			} else {
-				if value, err := getMap.Get(hzContext, "testKey"); err != nil {
-					fmt.Printf("failed to get value for key \"testKey\": %s\n", err)
+				mapKey := fmt.Sprintf("testKey-%d", rand.IntN(100))
+				if value, err := getMap.Get(hzContext, mapKey); err != nil {
+					fmt.Printf("failed to get value for key \"%s\": %s\n", err, mapKey)
 				} else {
-					getTime := time.Since(startTime)
 					if value == nil {
-						fmt.Printf("Key \"testKey\" not found in map '%s', adding it now.\n", conf.HzMapName)
-						startTime = time.Now()
-						value = fmt.Sprintf("value added by %s at %s", conf.MyIP, time.Now().Format(time.RFC3339))
-						if err = getMap.Set(hzContext, "testKey", value); err != nil {
-							fmt.Printf("failed to set value for key \"testKey\": %s\n", err)
-						} else {
-							setTime := time.Since(startTime)
-							util.LogDebug(fmt.Sprintf("Key \"testKey\" added to map '%s' with value \"%s\" in %d microsecs\n", conf.HzMapName, value, setTime.Microseconds()))
+						//map is empty (probably TTL expired) or key not found, populate it
+						fmt.Printf("Key \"%s\" not found in map '%s', adding %d new keys now.\n", mapKey, conf.HzMapName, numMapEntries)
+						for ix := 0; ix < numMapEntries; ix++ {
+							value = fmt.Sprintf("value %d added by %s at %s", ix, conf.MyIP, time.Now().Format(time.RFC3339))
+							if err = getMap.Set(hzContext, fmt.Sprintf("testKey-%d", ix), value); err != nil {
+								fmt.Printf("failed to set value for key \"testKey-%d\": %s\n", ix, err)
+							}
 						}
+						fmt.Printf("added %d keys in %d microsecs\n", numMapEntries, time.Since(startTime).Microseconds())
 					} else {
-						util.LogDebug(fmt.Sprintf("Key \"testKey\" found from IP %s with value: \"%s\" in %d microsecs\n", conf.MyIP, value, getTime.Microseconds()))
+						util.LogDebug(fmt.Sprintf("Key \"%s\" found from IP %s with value: \"%s\" in %d microsecs\n", mapKey, conf.MyIP, value, time.Since(startTime).Microseconds()))
 					}
 				}
 			}
