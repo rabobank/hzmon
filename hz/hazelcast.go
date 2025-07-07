@@ -22,34 +22,40 @@ func StartProbing() {
 		fmt.Printf("failed to start Hazelcast client: %s\n", err)
 		os.Exit(8)
 	} else {
-		// initial wait time so that with many instances the activity will be spread out
-		waitTime := float64(conf.IntervalSecs) / (1 + float64(conf.CFInstanceIndex))
-		fmt.Printf("waiting %.0f seconds\n", waitTime)
-		time.Sleep(time.Duration(waitTime) * time.Second)
-
 		for {
 			if !conf.StopRequested {
 				startTime := time.Now()
-				if getMap, err := client.GetMap(hzContext, conf.HzMapName); err != nil {
+				if hzMap, err := client.GetMap(hzContext, conf.HzMapName); err != nil {
 					fmt.Printf("failed to get map %s: %s\n", conf.HzMapName, err)
 				} else {
-					mapKey := fmt.Sprintf("testKey-%d", rand.IntN(100))
-					if value, err := getMap.Get(hzContext, mapKey); err != nil {
-						fmt.Printf("failed to get value for key \"%s\": %s\n", err, mapKey)
+					mapkey := fmt.Sprintf("testkey-%d", rand.IntN(100))
+					if value, err := hzMap.Get(hzContext, mapkey); err != nil {
+						fmt.Printf("failed to get value for key \"%s\": %s\n", err, mapkey)
 					} else {
 						if value == nil {
 							//map is empty (probably TTL expired) or key not found, populate it
-							fmt.Printf("Key \"%s\" not found in map '%s', adding %d new keys now.\n", mapKey, conf.HzMapName, numMapEntries)
+							fmt.Printf("key \"%s\" not found in map '%s', adding %d new keys now.\n", mapkey, conf.HzMapName, numMapEntries)
 							for ix := 0; ix < numMapEntries; ix++ {
 								value = fmt.Sprintf("value %d added by %s at %s", ix, conf.MyIP, time.Now().Format(time.RFC3339))
-								if err = getMap.Set(hzContext, fmt.Sprintf("testKey-%d", ix), value); err != nil {
-									fmt.Printf("failed to set value for key \"testKey-%d\": %s\n", ix, err)
+								if err = hzMap.Set(hzContext, fmt.Sprintf("testkey-%d", ix), value); err != nil {
+									fmt.Printf("failed to set value for key \"testkey-%d\": %s\n", ix, err)
 								}
 							}
 							fmt.Printf("added %d keys in %d microsecs\n", numMapEntries, time.Since(startTime).Microseconds())
 						} else {
-							conf.HzGetTime = time.Since(startTime).Microseconds()
-							util.LogDebug(fmt.Sprintf("Key \"%s\" found from IP %s with value: \"%s\" in %d microsecs\n", mapKey, conf.MyIP, value, conf.HzGetTime))
+							conf.HzSliceLock.Lock()
+							conf.HzGetTimes = append(conf.HzGetTimes, time.Since(startTime).Microseconds())
+							util.LogDebug(fmt.Sprintf("key \"%s\" found from IP %s with value: \"%s\" in %d microsecs\n", mapkey, conf.MyIP, value, conf.HzGetTimes[len(conf.HzGetTimes)-1]))
+							// we did a successful get for a key, we now try a put
+							value = fmt.Sprintf("value updated by %s at %s", conf.MyIP, time.Now().Format(time.RFC3339))
+							startTime = time.Now()
+							if err = hzMap.Set(hzContext, mapkey, value); err != nil {
+								fmt.Printf("failed to Set value for key \"%s\": %s\n", mapkey, err)
+							} else {
+								conf.HzPutTimes = append(conf.HzPutTimes, time.Since(startTime).Microseconds())
+								util.LogDebug(fmt.Sprintf("key \"%s\" updated with value: \"%s\" in %d microsecs\n", mapkey, value, conf.HzPutTimes[len(conf.HzPutTimes)-1]))
+							}
+							conf.HzSliceLock.Unlock()
 						}
 					}
 				}

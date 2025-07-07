@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 )
 
 var (
@@ -33,8 +34,10 @@ var (
 	HzMapName                  = os.Getenv("HZ_MAP_NAME")
 	cfInstanceIndexStr         = os.Getenv("CF_INSTANCE_INDEX")
 	CFInstanceIndex            int
-	HzGetTime                  int64 // time in microseconds it took to get the hz-map entry
-	PushGatewayURL             = os.Getenv("PUSHGATEWAY_URL")
+	HzGetTimes                 []int64 // time in microseconds it took to get the hz-map entry
+	HzPutTimes                 []int64 // time in microseconds it took to put the hz-map entry
+	HzSliceLock                sync.Mutex
+	PushGatewayURL             = os.Getenv("PUSH_GATEWAY_URL")
 )
 
 func EnvironmentComplete() bool {

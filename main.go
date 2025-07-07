@@ -7,6 +7,7 @@ import (
 	"github.com/rabobank/hzmon/prom"
 	"github.com/rabobank/hzmon/util"
 	"os"
+	"time"
 )
 
 func main() {
@@ -14,12 +15,18 @@ func main() {
 		os.Exit(8)
 	}
 
-	conf.MyIP = util.GetIP()
 	fmt.Printf("Starting hzmon (commithash:%s, buildtime:%s) with a %d second interval using MyIP: %s\n", conf.CommitHash, conf.BuildTime, conf.IntervalSecs, conf.MyIP)
 
-	prom.StartPrometheusSender()
-
 	startHttpServer()
+
+	conf.MyIP = util.GetIP()
+
+	// initial wait time so that with many instances the activity will be spread out
+	waitTime := conf.CFInstanceIndex
+	fmt.Printf("waiting %d seconds\n", waitTime)
+	time.Sleep(time.Duration(waitTime) * time.Second)
+
+	prom.StartPrometheusSender()
 
 	hz.StartProbing()
 }
