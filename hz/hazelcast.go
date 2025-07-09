@@ -67,39 +67,26 @@ func StartProbing() {
 
 func getHZConfig() hazelcast.Config {
 
-	connStrategy := cluster.ConnectionStrategyConfig{Retry: cluster.ConnectionRetryConfig{
-		InitialBackoff: types.Duration(100 * time.Millisecond),
-		MaxBackoff:     types.Duration(10 * time.Second),
-		Multiplier:     2,
-		Jitter:         3},
-		Timeout:       types.Duration(3 * time.Second),
-		ReconnectMode: cluster.ReconnectModeOn}
+	connStrategy := cluster.ConnectionStrategyConfig{
+		Retry:         cluster.ConnectionRetryConfig{InitialBackoff: types.Duration(100 * time.Millisecond), MaxBackoff: types.Duration(3 * time.Second), Multiplier: 2},
+		Timeout:       types.Duration(2 * time.Second),
+		ReconnectMode: cluster.ReconnectModeOff}
 
 	clusterConfig := cluster.Config{
-		Security: cluster.SecurityConfig{
-			Credentials: cluster.CredentialsConfig{Username: conf.HzConfigFromVCAP.Credentials.Principal, Password: conf.HzConfigFromVCAP.Credentials.Password}},
-		Name: conf.HzConfigFromVCAP.Credentials.ClusterName,
-		Network: cluster.NetworkConfig{Addresses: conf.HzConfigFromVCAP.Credentials.Ips,
-			ConnectionTimeout: types.Duration(3 * time.Second),
-		},
+		Security:           cluster.SecurityConfig{Credentials: cluster.CredentialsConfig{Username: conf.HzConfigFromVCAP.Credentials.Principal, Password: conf.HzConfigFromVCAP.Credentials.Password}},
+		Name:               conf.HzConfigFromVCAP.Credentials.ClusterName,
+		Network:            cluster.NetworkConfig{Addresses: conf.HzConfigFromVCAP.Credentials.Ips, ConnectionTimeout: types.Duration(3 * time.Second)},
 		ConnectionStrategy: connStrategy,
 	}
 
 	failoverClusterConfig1 := cluster.Config{
-		Security: cluster.SecurityConfig{
-			Credentials: cluster.CredentialsConfig{Username: conf.HzConfigFromVCAP.Credentials.Failover.Principal, Password: conf.HzConfigFromVCAP.Credentials.Failover.Password}},
-		Name: conf.HzConfigFromVCAP.Credentials.Failover.ClusterName,
-		Network: cluster.NetworkConfig{Addresses: conf.HzConfigFromVCAP.Credentials.Failover.Ips,
-			ConnectionTimeout: types.Duration(3 * time.Second),
-		},
+		Security:           cluster.SecurityConfig{Credentials: cluster.CredentialsConfig{Username: conf.HzConfigFromVCAP.Credentials.Failover.Principal, Password: conf.HzConfigFromVCAP.Credentials.Failover.Password}},
+		Name:               conf.HzConfigFromVCAP.Credentials.Failover.ClusterName,
+		Network:            cluster.NetworkConfig{Addresses: conf.HzConfigFromVCAP.Credentials.Failover.Ips, ConnectionTimeout: types.Duration(3 * time.Second)},
 		ConnectionStrategy: connStrategy,
 	}
 
 	failoverClusterConfigs := []cluster.Config{failoverClusterConfig1}
 
-	return hazelcast.Config{ClientName: "panzer-hzmon",
-		Failover: cluster.FailoverConfig{Configs: failoverClusterConfigs},
-		Cluster:  clusterConfig,
-		//Stats:    hazelcast.StatsConfig{Enabled: true, Period: types.Duration(10 * time.Second)}
-	}
+	return hazelcast.Config{ClientName: "panzer-hzmon", Failover: cluster.FailoverConfig{Configs: failoverClusterConfigs, TryCount: 1, Enabled: true}, Cluster: clusterConfig}
 }
