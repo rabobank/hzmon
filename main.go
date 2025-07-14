@@ -17,7 +17,7 @@ func main() {
 
 	conf.MyIP = util.GetIP()
 
-	fmt.Printf("Starting hzmon (version %s) with a %d second interval using MyIP: %s\n", conf.Version, conf.IntervalSecs, conf.MyIP)
+	fmt.Printf("Starting hzmon (version %s) with a %d second interval using MyIP: %s\n", conf.VERSION, conf.IntervalSecs, conf.MyIP)
 
 	startHttpServer()
 

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	Version string
+	VERSION string
 )
 
 const (
