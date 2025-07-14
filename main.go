@@ -15,7 +15,7 @@ func main() {
 		os.Exit(8)
 	}
 
-	fmt.Printf("Starting hzmon (commithash:%s, buildtime:%s) with a %d second interval using MyIP: %s\n", conf.CommitHash, conf.BuildTime, conf.IntervalSecs, conf.MyIP)
+	fmt.Printf("Starting hzmon (version %s) with a %d second interval using MyIP: %s\n", conf.Version, conf.IntervalSecs, conf.MyIP)
 
 	startHttpServer()
 
