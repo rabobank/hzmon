@@ -75,18 +75,18 @@ func getHZConfig() hazelcast.Config {
 	clusterConfig := cluster.Config{
 		Security:           cluster.SecurityConfig{Credentials: cluster.CredentialsConfig{Username: conf.HzConfigFromVCAP.Credentials.Principal, Password: conf.HzConfigFromVCAP.Credentials.Password}},
 		Name:               conf.HzConfigFromVCAP.Credentials.ClusterName,
-		Network:            cluster.NetworkConfig{Addresses: conf.HzConfigFromVCAP.Credentials.Ips, ConnectionTimeout: types.Duration(3 * time.Second)},
+		Network:            cluster.NetworkConfig{Addresses: conf.HzConfigFromVCAP.Credentials.Ips},
 		ConnectionStrategy: connStrategy,
 	}
 
-	failoverClusterConfig1 := cluster.Config{
+	failoverClusterConfig := cluster.Config{
 		Security:           cluster.SecurityConfig{Credentials: cluster.CredentialsConfig{Username: conf.HzConfigFromVCAP.Credentials.Failover.Principal, Password: conf.HzConfigFromVCAP.Credentials.Failover.Password}},
 		Name:               conf.HzConfigFromVCAP.Credentials.Failover.ClusterName,
-		Network:            cluster.NetworkConfig{Addresses: conf.HzConfigFromVCAP.Credentials.Failover.Ips, ConnectionTimeout: types.Duration(3 * time.Second)},
+		Network:            cluster.NetworkConfig{Addresses: conf.HzConfigFromVCAP.Credentials.Failover.Ips},
 		ConnectionStrategy: connStrategy,
 	}
 
-	failoverClusterConfigs := []cluster.Config{failoverClusterConfig1}
+	failoverClusterConfigs := []cluster.Config{clusterConfig, failoverClusterConfig}
 
-	return hazelcast.Config{ClientName: "panzer-hzmon", Failover: cluster.FailoverConfig{Configs: failoverClusterConfigs, TryCount: 1, Enabled: true}, Cluster: clusterConfig}
+	return hazelcast.Config{ClientName: "panzer-hzmon", Failover: cluster.FailoverConfig{Configs: failoverClusterConfigs, TryCount: 1, Enabled: true}}
 }
