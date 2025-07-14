@@ -15,11 +15,11 @@ func main() {
 		os.Exit(8)
 	}
 
+	conf.MyIP = util.GetIP()
+
 	fmt.Printf("Starting hzmon (version %s) with a %d second interval using MyIP: %s\n", conf.Version, conf.IntervalSecs, conf.MyIP)
 
 	startHttpServer()
-
-	conf.MyIP = util.GetIP()
 
 	// initial wait time so that with many instances the activity will be spread out
 	waitTime := conf.CFInstanceIndex
