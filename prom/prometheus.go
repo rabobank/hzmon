@@ -3,7 +3,6 @@ package prom
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/rabobank/hzmon/conf"
 	"github.com/rabobank/hzmon/util"
@@ -22,9 +21,14 @@ var pushGateway *push.Pusher
 
 func StartPrometheusSender() {
 	fmt.Printf("starting Prometheus sender with interval %d\n", conf.PushGatewayIntervalSecs)
-	metricGet = prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp, ConstLabels: map[string]string{"operation": "get", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}})
+	metricGet = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name:        metricName,
+			Help:        metricHelp,
+			ConstLabels: map[string]string{"operation": "get", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}},
+	)
 	metricPut = prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp, ConstLabels: map[string]string{"operation": "put", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}})
-	pushGateway = push.New(conf.PushGatewayURL, "rabo_hzmon").Collector(metricGet).Collector(metricPut).Collector(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{Namespace: "hzmon"}))
+	pushGateway = push.New(conf.PushGatewayURL, "rabo_hzmon")
 
 	channel := time.Tick(time.Duration(conf.PushGatewayIntervalSecs) * time.Second)
 	go func() {
