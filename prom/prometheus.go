@@ -27,8 +27,17 @@ func StartPrometheusSender() {
 			Help:        metricHelp,
 			ConstLabels: map[string]string{"operation": "get", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}},
 	)
-	metricPut = prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp, ConstLabels: map[string]string{"operation": "put", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}})
-	pushGateway = push.New(conf.PushGatewayURL, "rabo_hzmon")
+	metricPut = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name:        metricName,
+			Help:        metricHelp,
+			ConstLabels: map[string]string{"operation": "put", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}},
+	)
+	registry := prometheus.NewRegistry()
+	getCollector := prometheus.Collector(metricGet)
+	putCollector := prometheus.Collector(metricPut)
+	registry.MustRegister(getCollector, putCollector)
+	pushGateway = push.New(conf.PushGatewayURL, "rabo_hzmon").Collector(getCollector).Collector(putCollector)
 
 	channel := time.Tick(time.Duration(conf.PushGatewayIntervalSecs) * time.Second)
 	go func() {
