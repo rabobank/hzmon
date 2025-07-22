@@ -3,6 +3,7 @@ package prom
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/rabobank/hzmon/conf"
 	"github.com/rabobank/hzmon/util"
@@ -15,8 +16,16 @@ const (
 	metricHelp = "Response time of Hazelcast operations in microseconds"
 )
 
+var metricGet prometheus.Gauge
+var metricPut prometheus.Gauge
+var pushGateway *push.Pusher
+
 func StartPrometheusSender() {
 	fmt.Printf("starting Prometheus sender with interval %d\n", conf.PushGatewayIntervalSecs)
+	metricGet = prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp, ConstLabels: map[string]string{"operation": "get", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}})
+	metricPut = prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp, ConstLabels: map[string]string{"operation": "put", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}})
+	pushGateway = push.New(conf.PushGatewayURL, "rabo_hzmon").Collector(metricGet).Collector(metricPut).Collector(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{Namespace: "hzmon"}))
+
 	channel := time.Tick(time.Duration(conf.PushGatewayIntervalSecs) * time.Second)
 	go func() {
 		for range channel {
@@ -46,20 +55,13 @@ func pushMetrics() {
 		conf.HzPutTimes = conf.HzPutTimes[:0]
 		conf.HzSliceLock.Unlock()
 
-		metricGet := prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp, ConstLabels: map[string]string{"operation": "get", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}})
-		metricPut := prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp, ConstLabels: map[string]string{"operation": "put", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}})
 		metricGet.Set(float64(averageGet))
 		metricPut.Set(float64(averagePut))
 
-		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Collector(metricGet).Push(); err != nil {
-			log.Printf("failed to send get metrics to %s: %v\n", conf.PushGatewayURL, err.Error())
+		if err := pushGateway.Push(); err != nil {
+			log.Printf("failed to send metrics to %s: %v\n", conf.PushGatewayURL, err.Error())
 		} else {
-			util.LogDebug(fmt.Sprintf("get metric (%d) sent to push gateway @ %s", averageGet, conf.PushGatewayURL))
-		}
-		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Collector(metricPut).Push(); err != nil {
-			log.Printf("failed to send put metrics to %s: %v\n", conf.PushGatewayURL, err.Error())
-		} else {
-			util.LogDebug(fmt.Sprintf("put metric (%d) sent to push gateway @ %s", averagePut, conf.PushGatewayURL))
+			util.LogDebug(fmt.Sprintf("metrics (get=%d,put=%d) sent to push gateway @ %s", averageGet, averagePut, conf.PushGatewayURL))
 		}
 	}
 }
