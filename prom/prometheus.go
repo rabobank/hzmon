@@ -46,17 +46,17 @@ func pushMetrics() {
 		conf.HzPutTimes = conf.HzPutTimes[:0]
 		conf.HzSliceLock.Unlock()
 
-		metricGet := prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp})
-		metricPut := prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp})
+		metricGet := prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp, ConstLabels: map[string]string{"operation": "get", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}})
+		metricPut := prometheus.NewGauge(prometheus.GaugeOpts{Name: metricName, Help: metricHelp, ConstLabels: map[string]string{"operation": "put", "sourceIP": conf.MyIP, "instanceIndex": fmt.Sprintf("%d", conf.CFInstanceIndex)}})
 		metricGet.Set(float64(averageGet))
 		metricPut.Set(float64(averagePut))
 
-		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Grouping("sourceIP", conf.MyIP).Grouping("instanceIndex", fmt.Sprintf("%d", conf.CFInstanceIndex)).Grouping("operation", "get").Collector(metricGet).Push(); err != nil {
+		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Collector(metricGet).Push(); err != nil {
 			log.Printf("failed to send get metrics to %s: %v\n", conf.PushGatewayURL, err.Error())
 		} else {
 			util.LogDebug(fmt.Sprintf("get metric (%d) sent to push gateway @ %s", averageGet, conf.PushGatewayURL))
 		}
-		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Grouping("sourceIP", conf.MyIP).Grouping("instanceIndex", fmt.Sprintf("%d", conf.CFInstanceIndex)).Grouping("operation", "put").Collector(metricPut).Push(); err != nil {
+		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Collector(metricPut).Push(); err != nil {
 			log.Printf("failed to send put metrics to %s: %v\n", conf.PushGatewayURL, err.Error())
 		} else {
 			util.LogDebug(fmt.Sprintf("put metric (%d) sent to push gateway @ %s", averagePut, conf.PushGatewayURL))
