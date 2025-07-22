@@ -51,12 +51,12 @@ func pushMetrics() {
 		metricGet.Set(float64(averageGet))
 		metricPut.Set(float64(averagePut))
 
-		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Grouping("sourceIP", conf.MyIP).Grouping("operation", "get").Collector(metricGet).Push(); err != nil {
+		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Grouping("sourceIP", conf.MyIP).Grouping("instanceIndex", fmt.Sprintf("%d", conf.CFInstanceIndex)).Grouping("operation", "get").Collector(metricGet).Push(); err != nil {
 			log.Printf("failed to send get metrics to %s: %v\n", conf.PushGatewayURL, err.Error())
 		} else {
 			util.LogDebug(fmt.Sprintf("get metric (%d) sent to push gateway @ %s", averageGet, conf.PushGatewayURL))
 		}
-		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Grouping("sourceIP", conf.MyIP).Grouping("operation", "put").Collector(metricPut).Push(); err != nil {
+		if err := push.New(conf.PushGatewayURL, "rabo_hzmon").Grouping("sourceIP", conf.MyIP).Grouping("instanceIndex", fmt.Sprintf("%d", conf.CFInstanceIndex)).Grouping("operation", "put").Collector(metricPut).Push(); err != nil {
 			log.Printf("failed to send put metrics to %s: %v\n", conf.PushGatewayURL, err.Error())
 		} else {
 			util.LogDebug(fmt.Sprintf("put metric (%d) sent to push gateway @ %s", averagePut, conf.PushGatewayURL))
