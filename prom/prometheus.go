@@ -5,6 +5,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rabobank/hzmon/hz"
+	"github.com/rabobank/hzmon/util"
 	"net/http"
 )
 
@@ -42,7 +43,7 @@ func (collector *HZMonCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	} else {
 		// iterate over the measurements and send them to the channel
-		fmt.Printf("Collecting %d HzMetrics\n", len(currentMetrics))
+		util.LogDebug(fmt.Sprintf("Collecting %d HzMetrics", len(currentMetrics)))
 		for _, metric := range currentMetrics {
 			ch <- prometheus.MustNewConstMetric(collector.HzMetric, prometheus.GaugeValue, float64(metric.RespTime), metric.Operation, metric.SourceIP, metric.InstanceIndex)
 		}
