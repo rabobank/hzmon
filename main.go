@@ -26,7 +26,7 @@ func main() {
 	fmt.Printf("waiting %d seconds\n", waitTime)
 	time.Sleep(time.Duration(waitTime) * time.Second)
 
-	prom.StartPrometheusSender()
+	prom.StartExporter()
 
 	hz.StartProbing()
 }

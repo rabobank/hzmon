@@ -1,12 +1,15 @@
 ### HzMon - Hazelcast Monitor
 
 An app that reads from and writes to a configured Hazelcast cluster at specified intervals. 
-Metrics (response time) are collected and sent to a prometheus push gateway.
+It exports prometheus metrics (response time) at /metrics. 
 It also offers a very simple web interface to stop/start the hz probing and turn debug on/off, to reach this interface for each app instance (i.e. turn debug on):
 
+The response time metrics are also stored in hazelcast, so prometheus can call any instance of hzmon to get the metrics.  
+Sample prometheus metrics:
+
 ```
-for IX in $(cf curl /v3/processes/$(cf app hzmon --guid)/stats|jq -r '.resources[].instance_guid')
-do
-curl -s -H "X-Cf-App-Instance=$IX" 'https://hzmon.<apps domain>/?debugon'
-done
+rabo_hzmon_responsetime{instanceIndex="3",operation="get",sourceIP="10.253.21.52"} 3379
+rabo_hzmon_responsetime{instanceIndex="3",operation="put",sourceIP="10.253.21.52"} 1746
+rabo_hzmon_responsetime{instanceIndex="4",operation="get",sourceIP="10.253.21.55"} 1787
+rabo_hzmon_responsetime{instanceIndex="4",operation="put",sourceIP="10.253.21.55"} 853
 ```
