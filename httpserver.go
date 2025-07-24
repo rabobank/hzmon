@@ -38,5 +38,5 @@ func handleRequest(writer http.ResponseWriter, request *http.Request) {
 		fmt.Printf("debugon requested by %s\n", request.RemoteAddr)
 		conf.Debug = true
 	}
-	_, _ = fmt.Fprintf(writer, "hzmon running:%t, debug:%t.  Use /?start or /?stop to control probing, /?debugon or /?debugoff to control debug mode (use header X-Cf-App-Instance=<ix> to direct to all the app instances).\n", !conf.StopRequested, conf.Debug)
+	_, _ = fmt.Fprintf(writer, "hzmon running:%t, debug:%t.  Use /?start or /?stop to control probing, /?debugon or /?debugoff to control debug mode (use header X-Cf-Process-Instance=\"<process-guid>:<Instance-Index>\" to direct to all the app instances).\n", !conf.StopRequested, conf.Debug)
 }
