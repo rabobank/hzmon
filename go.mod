@@ -3,7 +3,7 @@ module github.com/rabobank/hzmon
 go 1.24.1
 
 require (
-	github.com/hazelcast/hazelcast-go-client v1.4.2
+	github.com/hazelcast/hazelcast-go-client v1.4.3
 	github.com/prometheus/client_golang v1.23.0
 )
 
