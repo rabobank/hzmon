@@ -1,10 +1,11 @@
 package model
 
 type VcapServices struct {
-	UserProvided []UserProvided `json:"user-provided"`
+	UserProvided []Binding `json:"user-provided"`
+	Credhub      []Binding `json:"credhub"`
 }
 
-type UserProvided struct {
+type Binding struct {
 	BindingGUID string `json:"binding_guid"`
 	BindingName any    `json:"binding_name"`
 	Credentials struct {
