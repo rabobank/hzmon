@@ -25,7 +25,7 @@ var (
 	Debug              bool
 	MyIP               string
 	StopRequested      bool
-	HzConfigFromVCAP   model.UserProvided
+	HzConfigFromVCAP   model.Binding
 	HzMapName          = os.Getenv("HZ_MAP_NAME")
 	CFEnv              = os.Getenv("RABOPCF_SYSTEM_ENV")
 	cfInstanceIndexStr = os.Getenv("CF_INSTANCE_INDEX")
@@ -78,10 +78,20 @@ func IsHZComplete() bool {
 		if err := json.Unmarshal([]byte(vcapServicesString), &vcapServices); err != nil {
 			fmt.Printf("could not get hazelcast credentials from user-provided service, error: %s\n", err)
 		} else {
-			for _, service := range vcapServices.UserProvided {
-				if service.InstanceName == "test-cache" {
-					fmt.Printf("got hz-credentials, instance-name:%s, clustername:%s, failover-clustername:%s,  \n", service.InstanceName, service.Credentials.ClusterName, service.Credentials.Failover.ClusterName)
-					HzConfigFromVCAP = service
+			var bindings []model.Binding
+			bindings = append(bindings, vcapServices.UserProvided...)
+			bindings = append(bindings, vcapServices.Credhub...)
+			for _, binding := range bindings {
+				hzTagFound := false
+				for _, tag := range binding.Tags {
+					if tag == "hazelcast-multitenant" {
+						hzTagFound = true
+						break
+					}
+				}
+				if hzTagFound {
+					fmt.Printf("got hz-credentials, instance-name:%s, clustername:%s, failover-clustername:%s,  \n", binding.InstanceName, binding.Credentials.ClusterName, binding.Credentials.Failover.ClusterName)
+					HzConfigFromVCAP = binding
 					return true
 				}
 			}
