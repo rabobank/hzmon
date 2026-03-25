@@ -96,6 +96,8 @@ func IsHZComplete() bool {
 				}
 			}
 		}
+		fmt.Println("no hazelcast-multitenant binding found in VCAP_SERVICES")
+		return false
 	}
 	fmt.Println("no VCAP_SERVICES envvar found")
 	return false

@@ -3,15 +3,16 @@ package hz
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/rabobank/hzmon/conf"
 	"github.com/rabobank/hzmon/util"
-	"math/rand/v2"
-	"os"
-	"strings"
-	"time"
 )
 
 var (
@@ -43,7 +44,7 @@ func StartProbing() {
 				} else {
 					mapkey := fmt.Sprintf("testkey-%d", rand.IntN(100))
 					if value, err := hzMap.Get(hzContext, mapkey); err != nil {
-						fmt.Printf("failed to get value for key \"%s\": %s\n", err, mapkey)
+						fmt.Printf("failed to get value for key \"%s\": %s\n", mapkey, err)
 					} else {
 						if value == nil {
 							//map is empty (probably TTL expired) or key not found, populate it
@@ -72,6 +73,8 @@ func StartProbing() {
 					}
 				}
 				time.Sleep(time.Duration(conf.IntervalSecs+rand.IntN(5)) * time.Second)
+			} else {
+				time.Sleep(1 * time.Second)
 			}
 		}
 	}
@@ -92,6 +95,9 @@ func SaveInHZ(ctx context.Context, hzMap *hazelcast.Map, getTime int64, putTime 
 //GetMetricsFromHZ - Get the metrics from Hazelcast and store them in the Prometheus collector
 
 func GetMetricsFromHZ() ([]HzMetric, error) {
+	if hzClient == nil {
+		return nil, fmt.Errorf("hazelcast client not initialized yet")
+	}
 	if hzMap, err := hzClient.GetMap(hzContext, conf.HzMapName); err != nil {
 		return nil, fmt.Errorf("failed to get map %s: %w", conf.HzMapName, err)
 	} else {
